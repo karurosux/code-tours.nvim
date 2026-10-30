@@ -27,7 +27,7 @@ lazy.nvim:
 
 ```lua
 {
-  "YOURUSER/code-tours.nvim",
+  "karurosux/code-tours.nvim",
   opts = {},
 }
 ```
