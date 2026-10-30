@@ -127,7 +127,7 @@ function M.read()
     return stop_speech()
   end
   local target = state.section and state.walk[state.section] or current_stop()
-  local voice = state.tour.voice or config.speech.voice
+  local voice = state.voice or state.tour.voice or config.speech.voice
   local cmd = speech_command(speech_text(target.title, target.body), voice)
   if vim.fn.executable(cmd[1]) == 0 then
     return vim.notify("No '" .. cmd[1] .. "' command on this system", vim.log.levels.WARN)
@@ -464,6 +464,57 @@ function M.list()
   pick("Start tour", M.start)
 end
 
+local function available_voices()
+  if config.speech.build or vim.fn.executable("say") == 0 then
+    return {}
+  end
+  local voices = {}
+  for _, line in ipairs(vim.fn.systemlist({ "say", "-v", "?" })) do
+    local name, lang, sample = line:match("^(.-)%s+(%S+)%s+#%s*(.*)$")
+    if name then
+      voices[#voices + 1] = { name = name, lang = lang, sample = sample }
+    end
+  end
+  return voices
+end
+
+local function set_voice(name)
+  state.voice = name
+  vim.notify("Tour voice: " .. name .. " (this session; set speech.voice in setup to keep it)")
+end
+
+function M.voice(name)
+  if name and name ~= "" then
+    return set_voice(name)
+  end
+  local voices = available_voices()
+  if #voices == 0 then
+    return vim.ui.input({ prompt = "Voice: " }, function(text)
+      if text and text ~= "" then
+        set_voice(text)
+      end
+    end)
+  end
+  vim.ui.select(voices, {
+    prompt = "Tour voice",
+    format_item = function(v)
+      return ("%-20s %-8s %s"):format(v.name, v.lang, v.sample)
+    end,
+  }, function(choice)
+    if not choice then
+      return
+    end
+    set_voice(choice.name)
+    stop_speech()
+    local sample = choice.sample ~= "" and choice.sample or choice.name
+    state.say = vim.fn.jobstart(speech_command(sample, choice.name), {
+      on_exit = function()
+        state.say = nil
+      end,
+    })
+  end)
+end
+
 function M.delete(name)
   if not name or name == "" then
     return pick("Delete tour", M.delete)
@@ -545,6 +596,19 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("TourRead", M.read, { desc = "Read this stop/section aloud (again stops)" })
   vim.api.nvim_create_user_command("TourHere", M.here, { desc = "Re-open the current tour stop/section" })
   vim.api.nvim_create_user_command("TourQuit", M.quit, { desc = "End the tour" })
+  vim.api.nvim_create_user_command("TourVoice", function(cmd)
+    M.voice(cmd.args)
+  end, {
+    nargs = "?",
+    complete = function()
+      local names = {}
+      for _, v in ipairs(available_voices()) do
+        names[#names + 1] = v.name
+      end
+      return names
+    end,
+    desc = "Pick the speech voice for this session (no arg: picker with samples)",
+  })
   vim.api.nvim_create_user_command("TourInstallSkill", M.install_skill,
     { desc = "Install the bundled Claude Code skill into ~/.claude/skills" })
   vim.api.nvim_create_user_command("TourDelete", function(cmd)

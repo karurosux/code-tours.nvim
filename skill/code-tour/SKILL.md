@@ -206,6 +206,9 @@ and they did ask, use
 - Section mode: next/prev move between highlighted sections, past the last
   one (or the quit key) returns to the tour stop; the highlight group is
   `TourSection`, linked to `Visual` by default
+- `:TourVoice [name]` picks the speech voice for the session (no arg: picker
+  that speaks each voice's sample); it overrides the tour's `voice` and the
+  configured fallback
 - `:TourEdit <name>` / `:TourDelete <name>` (confirms)
 - `:TourInstallSkill` reinstalls this skill from the plugin
 - Global keybindings, set only when the key is free so they never overwrite

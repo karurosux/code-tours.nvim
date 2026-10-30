@@ -102,6 +102,7 @@ return {
 | `:TourExplain` | Walk the current file's sections |
 | `:TourAnnotate` | Attach feedback to the current stop/section |
 | `:TourRead` | Speak the current stop/section (again stops) |
+| `:TourVoice [name]` | Pick the speech voice for this session (no arg: picker that speaks each sample) |
 | `:TourHere` | Re-open the current stop's float and position |
 | `:TourQuit` | End the tour |
 | `:TourEdit <name>` | Open a tour file |
@@ -141,6 +142,9 @@ require("tours").setup({
 
 - `leader_maps` are set **only when the key is free**, so they never
   overwrite an existing mapping. Set `leader_maps = false` to skip them.
+- `:TourVoice` overrides the voice for the current nvim session; it wins over
+  both the tour's `voice` and `speech.voice`. With no argument it lists the
+  voices from `say -v '?'` and speaks each one's sample line as you pick.
 - `speech.voice` is a fallback for tours that don't set their own. On macOS,
   only voices listed by `say -v '?'` work (Siri voices don't); download
   Enhanced voices in System Settings > Accessibility > Spoken Content.
